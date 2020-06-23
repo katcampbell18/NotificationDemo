@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Notifications</string>
     <string name="long_dummy_text">The purpose of lorem ipsum is to create a natural looking block of text (sentence, paragraph, page, etc.) that doesn\'t distract from the layout. A practice not without controversy, laying out pages with meaningless filler text can be very useful when the focus is meant to be on design, not content.</string>
+    <string name="delete_button_text">Delete Channels</string>
+    <string name="channel_1_button_text">Send on Channel 1</string>
+    <string name="channel_2_button_text">Send on Channel 2</string>
 </resources>
