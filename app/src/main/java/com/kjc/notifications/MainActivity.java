@@ -1,10 +1,13 @@
 package com.kjc.notifications;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 
 import androidx.core.app.RemoteInput;
@@ -12,17 +15,18 @@ import androidx.core.app.RemoteInput;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.provider.Settings;
 import android.view.View;
 import android.widget.EditText;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.kjc.notifications.App.CHANNEL_1_ID;
-import static com.kjc.notifications.App.CHANNEL_2_ID;
+import static com.kjc.notifications.Constants.*;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -47,6 +51,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void sendOnChannel1(View v) {
+        if (!notificationManager.areNotificationsEnabled()) {
+            openNotificationSettings();
+            return;
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                isChannelBlocked(CHANNEL_1_ID)) {
+            openChannelSettings(CHANNEL_1_ID);
+            return;
+        }
+
         sendChannel1Notification(this);
     }
 
@@ -131,10 +146,10 @@ public class MainActivity extends AppCompatActivity {
         Notification summaryNotification = new NotificationCompat.Builder(this, CHANNEL_2_ID)
                 .setSmallIcon(R.drawable.ic_reply)
                 .setStyle(new NotificationCompat.InboxStyle()
-                .addLine(title2 + " " + message2)
-                .addLine(title1 + " " + message1)
-                .setBigContentTitle("2 new messages")
-                .setSummaryText("user@example.com"))
+                        .addLine(title2 + " " + message2)
+                        .addLine(title1 + " " + message1)
+                        .setBigContentTitle("2 new messages")
+                        .setSummaryText("user@example.com"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setGroup("example_group")
                 .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
@@ -147,5 +162,34 @@ public class MainActivity extends AppCompatActivity {
         notificationManager.notify(3, notification2);
         SystemClock.sleep(2000);
         notificationManager.notify(4, summaryNotification);
+    }
+
+    private void openNotificationSettings() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+            startActivity(intent);
+        } else {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package: " + getPackageName()));
+            startActivity(intent);
+        }
+    }
+
+    @RequiresApi(26)
+    private boolean isChannelBlocked(String channelId) {
+        NotificationManager manager = getSystemService(NotificationManager.class);
+        NotificationChannel channel = manager.getNotificationChannel(channelId);
+
+        return channel != null &&
+                channel.getImportance() == NotificationManager.IMPORTANCE_NONE;
+    }
+
+    @RequiresApi(26)
+    private void openChannelSettings(String channelId) {
+        Intent intent = new Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS);
+        intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+        intent.putExtra(Settings.EXTRA_CHANNEL_ID, channelId);
+        startActivity(intent);
     }
 }
